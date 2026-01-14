@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>GranaZen</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- LIBS -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+<style>
+:root{
+ --azul:#1e88e5; --verde:#43a047; --vermelho:#e53935; --laranja:#fb8c00;
+ --bg:#f4f6f8; --branco:#fff; --cinza:#666; --cinza-claro:#f0f0f0;
+}
+
+*{box-sizing:border-box; font-family:'Segoe UI', Arial, sans-serif; margin:0; padding:0;}
+body{background:var(--bg); color:var(--cinza);}
+
+header{
+ display:flex; justify-content:space-between; align-items:center;
+ background:linear-gradient(135deg,var(--verde),#0d47a1);
+ color:var(--branco); padding:20px 30px;
+ box-shadow:0 4px 12px rgba(0,0,0,.15);
+ flex-wrap:wrap;
+}
+header h1 {
+ font-size:50px; font-weight:800; text-shadow:2px 2px 8px rgba(0,0,0,.3);
+}
+header button{
+ padding:10px 16px; border:none; border-radius:8px; background:#e53935;
+ color:white; cursor:pointer; font-weight:600; transition:0.3s;
+}
+header button:hover{ background:#c62828; transform:translateY(-2px); }
+
+.container{max-width:1200px; margin:auto; padding:20px;}
+.cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; margin-bottom:20px;}
+.card{
+ background:var(--branco); padding:20px; border-radius:14px;
+ box-shadow:0 4px 15px rgba(0,0,0,.08); transition: transform .3s, box-shadow .3s;
+}
+.card:hover{transform:translateY(-4px); box-shadow:0 6px 18px rgba(0,0,0,.15);}
+.card h3{margin:0;font-size:14px;color:var(--cinza);}
+.card p{font-size:26px;margin:6px 0 0; font-weight:700; display:flex; align-items:center;}
+.card p span{margin-right:8px; font-size:22px;}
+
+.actions{margin-bottom:20px; display:flex; flex-wrap:wrap; gap:10px;}
+.actions button{
+ padding:12px 18px; border:none; border-radius:10px;
+ font-weight:600; cursor:pointer; color:var(--branco);
+ transition: transform .25s, box-shadow .25s;
+}
+.actions button:hover{transform: translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,.2);}
+.btn-var{background:var(--vermelho);}
+.btn-fixa{background:var(--laranja);}
+.btn-rec{background:var(--verde);}
+.btn-exp{background:#546e7a;}
+
+table{
+ width:100%; border-collapse:collapse; background:var(--branco);
+ border-radius:12px; overflow:hidden; margin-top:20px; box-shadow:0 2px 10px rgba(0,0,0,.05);
+ transition:all .3s;
+}
+thead th{
+ padding:10px; background:var(--cinza-claro); font-size:14px; text-align:left;
+}
+tbody td{padding:10px; border-bottom:1px solid #eee;}
+tbody tr:nth-child(even){background:#f9f9f9;}
+tbody tr:hover{background:#e3f2fd;}
+
+.modal{
+ position:fixed; inset:0; background:rgba(0,0,0,.55);
+ display:none; align-items:center; justify-content:center; z-index:999;
+ opacity:0; transition: opacity .25s;
+}
+.modal.show{display:flex; opacity:1;}
+
+.modal-content{
+ background:var(--branco); padding:22px; border-radius:14px;
+ width:360px; max-width:95%; box-shadow:0 8px 20px rgba(0,0,0,.25);
+ transform: translateY(-20px); transition: transform .25s;
+}
+.modal.show .modal-content{transform: translateY(0);}
+.modal-content h3{margin-bottom:10px;}
+.modal-content button{width:100%; padding:10px; margin-top:8px; border:none; border-radius:8px; font-weight:600; cursor:pointer; transition: background .25s;}
+
+input,select{
+ width:100%; padding:10px; margin:6px 0; border-radius:8px; border:1px solid #ccc;
+ font-size:14px; transition: border .2s;
+}
+input:focus, select:focus{border-color:var(--azul); outline:none;}
+
+small{color:var(--cinza); font-size:12px;}
+
+.grid-graficos{
+ display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:20px;
+}
+@media(max-width:900px){.grid-graficos{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>GranaZen</h1>
+  <button id="btnLogout">Sair</button>
+</header>
+
+<!-- MODAIS LOGIN/CADASTRO -->
+<div class="modal" id="modalLogin">
+<div class="modal-content">
+<h3>Login</h3>
+<input type="text" id="loginUser" placeholder="Usuário">
+<input type="password" id="loginPass" placeholder="Senha">
+<button class="btn-rec" onclick="login()">Entrar</button>
+<p style="text-align:center; margin-top:10px;">Não tem conta? <span style="color:var(--azul); cursor:pointer;" onclick="showRegister()">Cadastre-se</span></p>
+<small id="loginMsg"></small>
+</div>
+</div>
+
+<div class="modal" id="modalRegister">
+<div class="modal-content">
+<h3>Cadastro</h3>
+<input type="text" id="regUser" placeholder="Usuário">
+<input type="password" id="regPass" placeholder="Senha">
+<button class="btn-rec" onclick="register()">Cadastrar</button>
+<p style="text-align:center; margin-top:10px;">Já tem conta? <span style="color:var(--azul); cursor:pointer;" onclick="showLogin()">Entrar</span></p>
+<small id="regMsg"></small>
+</div>
+</div>
+
+<div class="container" id="mainApp" style="display:none;">
+
+<div class="card">
+<input type="month" id="mes" onchange="render()">
+</div>
+
+<div class="cards">
+<div class="card"><h3>Receitas</h3><p><span>💰</span><span id="r">R$ 0,00</span></p></div>
+<div class="card"><h3>Despesas</h3><p><span>💸</span><span id="d">R$ 0,00</span></p></div>
+<div class="card"><h3>Saldo</h3><p><span>🏦</span><span id="s">R$ 0,00</span></p></div>
+</div>
+
+<div class="actions">
+<button class="btn-rec" onclick="openRec()">💰 Receita</button>
+<button class="btn-var" onclick="openVar()">💸 Despesas Variáveis</button>
+<button class="btn-fixa" onclick="openFixa()">🏦 Despesas Fixas</button>
+<button class="btn-exp" onclick="exportExcel()">📊 Excel</button>
+<button class="btn-exp" onclick="exportPDF()">📄 PDF</button>
+</div>
+
+<table>
+<thead>
+<tr>
+<th>Descrição</th><th>Categoria</th><th>Tipo</th><th>Valor</th><th></th>
+</tr>
+</thead>
+<tbody id="tab"></tbody>
+</table>
+
+<div class="grid-graficos">
+  <div class="card">
+    <h3>Visão Geral do Mês</h3>
+    <canvas id="dashboard"></canvas>
+  </div>
+  <div class="card mini-dashboard">
+    <h3>Categorias</h3>
+    <canvas id="grafCategoria" height="140"></canvas>
+  </div>
+</div>
+
+<!-- MODAIS LANÇAMENTO -->
+<div class="modal" id="modalVar">
+<div class="modal-content">
+<h3>Conta Variável</h3>
+<input id="v_desc" placeholder="Descrição">
+<input id="v_val" type="number" step="0.01" placeholder="Valor pago">
+<select id="v_cat">
+  <option>Alimentação</option>
+  <option>Mercado</option>
+  <option>Luz</option>
+  <option>Água</option>
+  <option>Transporte</option>
+  <option>Combustível</option>
+  <option>Saúde</option>
+  <option>Lazer</option>
+  <option>Educação</option>
+  <option>Assinaturas</option>
+  <option>Outros</option>
+</select>
+<input type="file" accept="image/*" onchange="lerCupom(this,'var')">
+<small id="ocrVar"></small>
+<button class="btn-var" onclick="addVar()">Salvar</button>
+<button onclick="closeAll()">Cancelar</button>
+</div>
+</div>
+
+<div class="modal" id="modalFixa">
+<div class="modal-content">
+<h3>Conta Fixa</h3>
+<input id="f_desc" placeholder="Descrição">
+<input id="f_val" type="number" step="0.01" placeholder="Valor da parcela">
+<input id="f_parc" type="number" placeholder="Quantidade de parcelas">
+<select id="f_cat">
+  <option>Moradia</option>
+  <option>Aluguel</option>
+  <option>Internet</option>
+  <option>Telefone</option>
+  <option>Plano de Saúde</option>
+  <option>Seguro</option>
+  <option>Educação</option>
+  <option>Academia</option>
+  <option>Outros</option>
+</select>
+<input type="file" accept="image/*" onchange="lerCupom(this,'fixa')">
+<small id="ocrFixa"></small>
+<button class="btn-fixa" onclick="addFixa()">Salvar</button>
+<button onclick="closeAll()">Cancelar</button>
+</div>
+</div>
+
+<div class="modal" id="modalRec">
+<div class="modal-content">
+<h3>Receita</h3>
+<input id="r_desc" placeholder="Descrição">
+<input id="r_val" type="number" step="0.01" placeholder="Valor recebido">
+<select id="r_cat">
+  <option>Salário</option>
+  <option>Freelance</option>
+  <option>Comissões</option>
+  <option>Vendas</option>
+  <option>Rendimentos</option>
+  <option>Aluguel Recebido</option>
+  <option>Outros</option>
+</select>
+<button class="btn-rec" onclick="addRec()">Salvar</button>
+<button onclick="closeAll()">Cancelar</button>
+</div>
+</div>
+
+<div class="modal" id="modalExcluir">
+<div class="modal-content">
+<h3 id="tituloExcluir"></h3>
+<p id="textoExcluir"></p>
+<button id="btnExcluirUm" class="btn-var">Excluir somente este</button>
+<button id="btnExcluirTodos" class="btn-fixa">Excluir todos</button>
+<button onclick="fecharExcluir()">Cancelar</button>
+</div>
+</div>
+
+<script>
+// ================= JAVASCRIPT COMPLETO (mantido do seu código original) =================
+let dados = JSON.parse(localStorage.getItem('dados')) || [];
+let users = JSON.parse(localStorage.getItem('users')) || {};
+let currentUser = localStorage.getItem('currentUser') || null;
+let indiceExcluir = null;
+
+const modalLogin = document.getElementById('modalLogin');
+const modalRegister = document.getElementById('modalRegister');
+const mainApp = document.getElementById('mainApp');
+
+function showLogin(){ modalRegister.classList.remove('show'); modalLogin.classList.add('show'); }
+function showRegister(){ modalLogin.classList.remove('show'); modalRegister.classList.add('show'); }
+
+function login(){
+ const u=document.getElementById('loginUser').value.trim();
+ const p=document.getElementById('loginPass').value;
+ if(users[u] && users[u].pass===p){
+   currentUser=u; localStorage.setItem('currentUser',currentUser);
+   dados=JSON.parse(localStorage.getItem('dados_'+u))||[];
+   modalLogin.classList.remove('show'); mainApp.style.display='block'; render();
+ } else { document.getElementById('loginMsg').textContent='Usuário ou senha inválidos'; }
+}
+
+function register(){
+ const u=document.getElementById('regUser').value.trim();
+ const p=document.getElementById('regPass').value;
+ if(!u||!p){ document.getElementById('regMsg').textContent='Preencha todos os campos'; return; }
+ if(users[u]){ document.getElementById('regMsg').textContent='Usuário já existe'; return; }
+ users[u]={pass:p}; localStorage.setItem('users',JSON.stringify(users));
+ localStorage.setItem('dados_'+u,JSON.stringify([]));
+ document.getElementById('regMsg').textContent='Cadastro realizado ✅';
+ setTimeout(()=>{showLogin();},1000);
+}
+
+// ================= FUNÇÕES PRINCIPAIS =================
+function salvar(){ localStorage.setItem('dados_'+currentUser,JSON.stringify(dados)); render(); }
+function mesAtual(){ return document.getElementById('mes').value || new Date().toISOString().slice(0,7); }
+function uid(){return Math.random().toString(36).slice(2,9);}
+function openVar(){modalVar.classList.add('show');} function openFixa(){modalFixa.classList.add('show');} function openRec(){modalRec.classList.add('show');} function closeAll(){modalVar.classList.remove('show'); modalFixa.classList.remove('show'); modalRec.classList.remove('show');}
+function limpar(){ ['v_desc','v_val','f_desc','f_val','f_parc','r_desc','r_val'].forEach(id=>document.getElementById(id).value=''); ocrVar.textContent=''; ocrFixa.textContent=''; }
+function addVar(){ dados.push({tipo:'despesa',descricao:v_desc.value,valor:+v_val.value,categoria:v_cat.value,mes:mesAtual()}); limpar(); closeAll(); salvar(); }
+function addFixa(){ const g=uid(); for(let i=0;i<f_parc.value;i++){ let d=new Date();d.setMonth(d.getMonth()+i); dados.push({grupo:g,tipo:'despesa_fixa',descricao:f_desc.value,valor:+f_val.value,categoria:f_cat.value,mes:d.toISOString().slice(0,7)});} limpar(); closeAll(); salvar(); }
+function addRec(){ dados.push({tipo:'receita',descricao:r_desc.value,valor:+r_val.value,categoria:r_cat.value,mes:mesAtual()}); limpar(); closeAll(); salvar(); }
+function excluir(i){ indiceExcluir=i; const e=dados[i]; modalExcluir.classList.add('show'); tituloExcluir.textContent='Excluir lançamento'; textoExcluir.textContent= e.tipo==='despesa_fixa'?'Excluir apenas esta parcela ou todas?':'Deseja excluir este lançamento?'; btnExcluirTodos.style.display= e.tipo==='despesa_fixa'?'block':'none'; }
+btnExcluirUm.onclick=()=>{dados.splice(indiceExcluir,1); fecharExcluir(); }
+btnExcluirTodos.onclick=()=>{ const g=dados[indiceExcluir].grupo; dados=dados.filter(d=>d.grupo!==g); fecharExcluir(); }
+function fecharExcluir(){ modalExcluir.classList.remove('show'); indiceExcluir=null; salvar(); }
+function detectarCategoria(t){ if(/SUPERMERC|MERCADO|ATACAD/i.test(t))return'Alimentação'; if(/POSTO|COMBUST|GASOL/i.test(t))return'Transporte'; if(/FARM|DROGA|MEDIC/i.test(t))return'Saúde'; if(/NET|VIVO|CLARO|TIM/i.test(t))return'Internet'; if(/ENERG|ELETRIC|ENEL|CPFL/i.test(t))return'Luz'; if(/AGUA|SABESP/i.test(t))return'Água'; return'Outros'; }
+function lerCupom(input,tipo){ const f=input.files[0];if(!f)return; const status=tipo==='var'?ocrVar:ocrFixa; status.textContent='Lendo cupom...'; Tesseract.recognize(f,'por').then(({data})=>{ const texto=data.text.toUpperCase(); const linhas=texto.split('\n').map(l=>l.trim()).filter(l=>l.length>3); let desc='Cupom Fiscal'; for(let l of linhas){if(!l.match(/CNPJ|CPF|TOTAL|ICMS|QTD|ITEM|R\$/)&&l.length<40){desc=l;break;}} const cat=detectarCategoria(texto); const m=texto.match(/(TOTAL|A PAGAR)[^0-9]{0,20}([0-9]+[\\.,][0-9]{2})/); if(tipo==='var'){ v_desc.value=desc; v_cat.value=cat; if(m)v_val.value=m[2].replace('.','').replace(',','.'); } else{ f_desc.value=desc; f_cat.value=cat; if(m)f_val.value=m[2].replace('.','').replace(',','.'); } status.textContent='Cupom lido ✅'; input.value=''; }).catch(()=>status.textContent='Erro OCR ❌'); }
+function exportExcel(){const linhas=dados.filter(d=>d.mes===mesAtual()); const ws=XLSX.utils.json_to_sheet(linhas); const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Relatório'); XLSX.writeFile(wb,'controle_financeiro.xlsx'); }
+function exportPDF(){const { jsPDF } = window.jspdf; const pdf=new jsPDF(); pdf.text('Relatório Financeiro',10,10); let y=20; dados.filter(d=>d.mes===mesAtual()).forEach(d=>{pdf.text(`${d.descricao} - ${d.categoria} - R$ ${d.valor.toFixed(2)}`,10,y); y+=8;}); pdf.save('controle_financeiro.pdf'); }
+
+const rEl=document.getElementById('r'), dEl=document.getElementById('d'), sEl=document.getElementById('s');
+const dashboard = new Chart(document.getElementById('dashboard'), {type:'bar',data:{labels:['Receitas','Despesas','Saldo'],datasets:[{label:'Valores (R$)',data:[0,0,0],backgroundColor:['#43a047','#e53935','#1e88e5'],borderRadius:10}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>'R$ '+ctx.raw.toFixed(2)}}}}});
+const grafCategoria = new Chart(document.getElementById('grafCategoria'),{type:'doughnut',data:{labels:[],datasets:[{data:[],backgroundColor:['#e53935','#fb8c00','#fdd835','#1e88e5','#43a047','#8e24aa','#6d4c41','#00acc1','#3949ab','#757575'],borderWidth:2,borderColor:'#fff',hoverOffset:12}]} ,options:{cutout:'75%',plugins:{legend:{position:'bottom',labels:{padding:14,boxWidth:14}},tooltip:{callbacks:{label: ctx=>`${ctx.label}: R$ ${ctx.raw.toFixed(2)}`}}}}});
+
+function render(){
+ let r=0,d=0,catMap={}; tab.innerHTML='';
+ dados.forEach((e,i)=>{ if(e.mes!==mesAtual())return; e.tipo==='receita'?r+=e.valor:d+=e.valor; if(e.tipo!=='receita'){catMap[e.categoria]=(catMap[e.categoria]||0)+e.valor;} tab.innerHTML+=`<tr><td>${e.descricao}</td><td>${e.categoria}</td><td>${e.tipo}</td><td>R$ ${e.valor.toFixed(2)}</td><td><button onclick="excluir(${i})">❌</button></td></tr>`;})
+ rEl.textContent=`R$ ${r.toFixed(2)}`; dEl.textContent=`R$ ${d.toFixed(2)}`; sEl.textContent=`R$ ${(r-d).toFixed(2)}`;
+ dashboard.data.datasets[0].data = [r,d,r-d]; dashboard.update();
+ grafCategoria.data.labels=Object.keys(catMap); grafCategoria.data.datasets[0].data=Object.values(catMap); grafCategoria.update();
+}
+
+if(currentUser){ mainApp.style.display='block'; render(); } else{ showLogin(); }
+const btnLogout = document.getElementById('btnLogout');
+btnLogout.onclick = function(){ if(confirm('Deseja realmente sair?')) { localStorage.setItem('currentUser',''); mainApp.style.display='none'; showLogin(); dados = []; } }
+</script>
+</body>
+</html>
