@@ -1,3 +1,5 @@
+desculpe, aonde eu altero neste HTML
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -16,8 +18,10 @@
  --azul:#1e88e5; --verde:#43a047; --vermelho:#e53935; --laranja:#fb8c00;
  --bg:#f4f6f8; --branco:#fff; --cinza:#666; --cinza-claro:#f0f0f0;
 }
+
 *{box-sizing:border-box; font-family:'Segoe UI', Arial, sans-serif; margin:0; padding:0;}
 body{background:var(--bg); color:var(--cinza);}
+
 header{
  display:flex; justify-content:space-between; align-items:center;
  background:linear-gradient(135deg,var(--verde),#0d47a1);
@@ -25,7 +29,9 @@ header{
  box-shadow:0 4px 12px rgba(0,0,0,.15);
  flex-wrap:wrap;
 }
-header h1 {font-size:50px; font-weight:800; text-shadow:2px 2px 8px rgba(0,0,0,.3);}
+header h1 {
+ font-size:50px; font-weight:800; text-shadow:2px 2px 8px rgba(0,0,0,.3);
+}
 header button{
  padding:10px 16px; border:none; border-radius:8px; background:#e53935;
  color:white; cursor:pointer; font-weight:600; transition:0.3s;
@@ -60,7 +66,9 @@ table{
  border-radius:12px; overflow:hidden; margin-top:20px; box-shadow:0 2px 10px rgba(0,0,0,.05);
  transition:all .3s;
 }
-thead th{padding:10px; background:var(--cinza-claro); font-size:14px; text-align:left;}
+thead th{
+ padding:10px; background:var(--cinza-claro); font-size:14px; text-align:left;
+}
 tbody td{padding:10px; border-bottom:1px solid #eee;}
 tbody tr:nth-child(even){background:#f9f9f9;}
 tbody tr:hover{background:#e3f2fd;}
@@ -71,6 +79,7 @@ tbody tr:hover{background:#e3f2fd;}
  opacity:0; transition: opacity .25s;
 }
 .modal.show{display:flex; opacity:1;}
+
 .modal-content{
  background:var(--branco); padding:22px; border-radius:14px;
  width:360px; max-width:95%; box-shadow:0 8px 20px rgba(0,0,0,.25);
@@ -105,7 +114,7 @@ small{color:var(--cinza); font-size:12px;}
 <div class="modal" id="modalLogin">
 <div class="modal-content">
 <h3>Login</h3>
-<input type="text" id="loginUser" placeholder="Email">
+<input type="text" id="loginUser" placeholder="Usuário">
 <input type="password" id="loginPass" placeholder="Senha">
 <button class="btn-rec" onclick="login()">Entrar</button>
 <p style="text-align:center; margin-top:10px;">Não tem conta? <span style="color:var(--azul); cursor:pointer;" onclick="showRegister()">Cadastre-se</span></p>
@@ -116,7 +125,7 @@ small{color:var(--cinza); font-size:12px;}
 <div class="modal" id="modalRegister">
 <div class="modal-content">
 <h3>Cadastro</h3>
-<input type="text" id="regUser" placeholder="Email">
+<input type="text" id="regUser" placeholder="Usuário">
 <input type="password" id="regPass" placeholder="Senha">
 <button class="btn-rec" onclick="register()">Cadastrar</button>
 <p style="text-align:center; margin-top:10px;">Já tem conta? <span style="color:var(--azul); cursor:pointer;" onclick="showLogin()">Entrar</span></p>
@@ -243,105 +252,46 @@ small{color:var(--cinza); font-size:12px;}
 </div>
 </div>
 
-<!-- ====================== FIREBASE CONFIG ====================== -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.3.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.3.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.3.0/firebase-firestore.js";
+<script>
+// ================= JAVASCRIPT COMPLETO (mantido do seu código original) =================
+let dados = JSON.parse(localStorage.getItem('dados')) || [];
+let users = JSON.parse(localStorage.getItem('users')) || {};
+let currentUser = localStorage.getItem('currentUser') || null;
+let indiceExcluir = null;
 
-// Configuração do Firebase
-const firebaseConfig = {
-    apiKey: "AIzaSyDr5asJlTKBkcaFgpm5de40i5GlFnoLYB4",
-    authDomain: "fluxograna-2bc5c.firebaseapp.com",
-    projectId: "fluxograna-2bc5c",
-    storageBucket: "fluxograna-2bc5c.firebasestorage.app",
-    messagingSenderId: "745029126977",
-    appId: "1:745029126977:web:84c26f9dd5e6d16364afc0"
-};
+const modalLogin = document.getElementById('modalLogin');
+const modalRegister = document.getElementById('modalRegister');
+const mainApp = document.getElementById('mainApp');
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-let dados = [];
-let currentUser = null;
-
-// ================= FUNÇÕES DE LOGIN/CADASTRO =================
 function showLogin(){ modalRegister.classList.remove('show'); modalLogin.classList.add('show'); }
 function showRegister(){ modalLogin.classList.remove('show'); modalRegister.classList.add('show'); }
 
-window.login = async function(){
-    const email = document.getElementById('loginUser').value.trim();
-    const senha = document.getElementById('loginPass').value;
-    if(!email || !senha){
-        document.getElementById('loginMsg').textContent = 'Preencha todos os campos';
-        return;
-    }
-    try{
-        const cred = await signInWithEmailAndPassword(auth, email, senha);
-        // usuário logado
-        const user = cred.user;
-        const docRef = doc(db,"usuarios",user.uid);
-        const docSnap = await getDoc(docRef);
-        dados = docSnap.exists() ? docSnap.data().transacoes : [];
-        modalLogin.classList.remove('show');
-        mainApp.style.display='block';
-        render();
-    }catch(e){
-        document.getElementById('loginMsg').textContent = 'Erro: '+e.message;
-    }
+function login(){
+ const u=document.getElementById('loginUser').value.trim();
+ const p=document.getElementById('loginPass').value;
+ if(users[u] && users[u].pass===p){
+   currentUser=u; localStorage.setItem('currentUser',currentUser);
+   dados=JSON.parse(localStorage.getItem('dados_'+u))||[];
+   modalLogin.classList.remove('show'); mainApp.style.display='block'; render();
+ } else { document.getElementById('loginMsg').textContent='Usuário ou senha inválidos'; }
 }
 
-window.register = async function(){
-    const email = document.getElementById('regUser').value.trim();
-    const senha = document.getElementById('regPass').value;
-    if(!email || !senha){
-        document.getElementById('regMsg').textContent = 'Preencha todos os campos';
-        return;
-    }
-    try{
-        const cred = await createUserWithEmailAndPassword(auth, email, senha);
-        // Cria documento Firestore
-        await setDoc(doc(db,"usuarios",cred.user.uid), {transacoes:[]});
-        document.getElementById('regMsg').textContent='Conta criada ✅';
-        setTimeout(()=>{showLogin();},1000);
-    }catch(e){
-        document.getElementById('regMsg').textContent = 'Erro: '+e.message;
-    }
-}
-// ================= MONITORA LOGIN =================
-onAuthStateChanged(auth, async (user)=>{
-    if(user){
-        currentUser = user.uid;
-        modalLogin.classList.remove('show');
-        modalRegister.classList.remove('show');
-        mainApp.style.display='block';
-        const docRef = doc(db,"usuarios",user.uid);
-        const docSnap = await getDoc(docRef);
-        dados = docSnap.exists()?docSnap.data().transacoes:[];
-        render();
-    }else{
-        currentUser = null;
-        mainApp.style.display='none';
-        showLogin();
-    }
-});
-
-// ================= FUNÇÃO SALVAR NO FIRESTORE =================
-async function salvar(){
-    if(!currentUser) return;
-    const docRef = doc(db,"usuarios",currentUser);
-    await setDoc(docRef, {transacoes:dados}, {merge:true});
-    render();
+function register(){
+ const u=document.getElementById('regUser').value.trim();
+ const p=document.getElementById('regPass').value;
+ if(!u||!p){ document.getElementById('regMsg').textContent='Preencha todos os campos'; return; }
+ if(users[u]){ document.getElementById('regMsg').textContent='Usuário já existe'; return; }
+ users[u]={pass:p}; localStorage.setItem('users',JSON.stringify(users));
+ localStorage.setItem('dados_'+u,JSON.stringify([]));
+ document.getElementById('regMsg').textContent='Cadastro realizado ✅';
+ setTimeout(()=>{showLogin();},1000);
 }
 
-// ================= FUNÇÕES PRINCIPAIS (mesmo do seu código) =================
+// ================= FUNÇÕES PRINCIPAIS =================
+function salvar(){ localStorage.setItem('dados_'+currentUser,JSON.stringify(dados)); render(); }
 function mesAtual(){ return document.getElementById('mes').value || new Date().toISOString().slice(0,7); }
 function uid(){return Math.random().toString(36).slice(2,9);}
-function openVar(){modalVar.classList.add('show');} 
-function openFixa(){modalFixa.classList.add('show');} 
-function openRec(){modalRec.classList.add('show');} 
-function closeAll(){modalVar.classList.remove('show'); modalFixa.classList.remove('show'); modalRec.classList.remove('show');}
+function openVar(){modalVar.classList.add('show');} function openFixa(){modalFixa.classList.add('show');} function openRec(){modalRec.classList.add('show');} function closeAll(){modalVar.classList.remove('show'); modalFixa.classList.remove('show'); modalRec.classList.remove('show');}
 function limpar(){ ['v_desc','v_val','f_desc','f_val','f_parc','r_desc','r_val'].forEach(id=>document.getElementById(id).value=''); ocrVar.textContent=''; ocrFixa.textContent=''; }
 function addVar(){ dados.push({tipo:'despesa',descricao:v_desc.value,valor:+v_val.value,categoria:v_cat.value,mes:mesAtual()}); limpar(); closeAll(); salvar(); }
 function addFixa(){ const g=uid(); for(let i=0;i<f_parc.value;i++){ let d=new Date();d.setMonth(d.getMonth()+i); dados.push({grupo:g,tipo:'despesa_fixa',descricao:f_desc.value,valor:+f_val.value,categoria:f_cat.value,mes:d.toISOString().slice(0,7)});} limpar(); closeAll(); salvar(); }
@@ -367,13 +317,9 @@ function render(){
  grafCategoria.data.labels=Object.keys(catMap); grafCategoria.data.datasets[0].data=Object.values(catMap); grafCategoria.update();
 }
 
+if(currentUser){ mainApp.style.display='block'; render(); } else{ showLogin(); }
 const btnLogout = document.getElementById('btnLogout');
-btnLogout.onclick = async function(){
-    if(confirm('Deseja realmente sair?')){
-        await signOut(auth);
-        dados = [];
-    }
-}
+btnLogout.onclick = function(){ if(confirm('Deseja realmente sair?')) { localStorage.setItem('currentUser',''); mainApp.style.display='none'; showLogin(); dados = []; } }
 </script>
 </body>
 </html>
